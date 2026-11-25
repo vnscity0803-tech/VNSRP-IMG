@@ -209,57 +209,71 @@
 
     async function scanRepository() {
       try {
-        // Try to load from manifest.json first
-        try {
-          const response = await fetch('manifest.json');
-          if (response.ok) {
-            const manifest = await response.json();
-            allItems = manifest.items || [];
-            if (allItems.length > 0) {
-              populateComponentFilter();
-              renderGrid();
-              document.getElementById('loadingState').classList.add('hidden');
-              document.getElementById('clothingGrid').classList.remove('hidden');
-              return;
-            }
-          }
-        } catch (e) {
-          console.log('manifest.json not found, scanning folders...');
+        // Extract owner and repo from GitHub Pages URL
+        // https://vnscity0803-tech.github.io/VNSRP-IMG/
+        const url = new URL(window.location.href);
+        const owner = url.hostname.split('.')[0]; // vnscity0803-tech
+        const repo = url.pathname.split('/')[1]; // VNSRP-IMG
+
+        if (!owner || !repo) {
+          throw new Error('Could not detect GitHub repo from URL');
         }
 
-        // Fallback: Scan folders directly
-        const folderNames = ['male', 'female', 'Item', 'Vehicle', 'Props', 'Accessories', 'ox_inventory'];
+        console.log(`📂 Scanning ${owner}/${repo}...`);
+
+        // Use GitHub API to get folder structure
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents`;
+        const response = await fetch(apiUrl);
+        
+        if (!response.ok) {
+          throw new Error(`GitHub API error: ${response.status}`);
+        }
+
+        const contents = await response.json();
+        const folders = contents.filter(item => item.type === 'dir' && !item.name.startsWith('.'));
+
+        if (folders.length === 0) {
+          throw new Error('No folders found in repo');
+        }
+
+        console.log(`✓ Found folders: ${folders.map(f => f.name).join(', ')}`);
+
         let items = [];
 
-        for (const folderName of folderNames) {
+        // Scan each folder for images
+        for (const folder of folders) {
           try {
-            // Try to fetch a list of files from folder
-            const response = await fetch(folderName + '/');
-            if (!response.ok) continue;
+            const folderUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${folder.name}`;
+            const folderResponse = await fetch(folderUrl);
+            
+            if (!folderResponse.ok) continue;
 
-            const html = await response.text();
+            const files = await folderResponse.json();
             
-            // Parse HTML to get file list (matches .png and .webp)
-            const fileMatches = html.match(/href=["']([^"']+\.(png|webp))["']/gi);
-            
-            if (fileMatches) {
-              fileMatches.forEach((match, idx) => {
-                const filename = match.match(/href=["']([^"']+)["']/)[1];
+            // Filter image files (.png, .webp)
+            const imageFiles = files.filter(f => 
+              f.type === 'file' && 
+              (f.name.endsWith('.png') || f.name.endsWith('.webp'))
+            );
+
+            if (imageFiles.length > 0) {
+              imageFiles.forEach((file, idx) => {
                 items.push({
-                  folder: folderName,
+                  folder: folder.name,
                   index: idx,
-                  name: `${folderName}_${filename.replace(/\.(png|webp)$/, '')}`,
-                  image: `${folderName}/${filename}`
+                  name: `${folder.name}_${file.name.replace(/\.(png|webp)$/, '')}`,
+                  image: `https://raw.githubusercontent.com/${owner}/${repo}/main/${folder.name}/${file.name}`
                 });
               });
+              console.log(`✓ ${folder.name}: ${imageFiles.length} files`);
             }
           } catch (e) {
-            console.log(`Folder ${folderName} not accessible or empty`);
+            console.log(`⚠ Error reading ${folder.name}:`, e.message);
           }
         }
 
         if (items.length === 0) {
-          throw new Error('No image files (PNG/WebP) found in any folder');
+          throw new Error('No image files found in any folder');
         }
 
         allItems = items;
@@ -275,9 +289,7 @@
           <div class="py-24 text-center">
             <p class="text-base text-zinc-300 mb-2">❌ ${error.message}</p>
             <p class="text-xs text-zinc-600 mb-6 space-y-2">
-              <div>Make sure folders with image files exist:</div>
-              <div class="text-xs">(male/, female/, Item/, ox_inventory/, etc.)</div>
-              <div class="text-xs">Supported: .png, .webp</div>
+              <div>Make sure repo has folders with .png or .webp files</div>
             </p>
             <button onclick="location.reload()" class="px-4 py-2 bg-rose-600 text-white text-xs rounded">Retry</button>
           </div>
