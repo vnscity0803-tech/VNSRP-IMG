@@ -209,11 +209,9 @@
 
     async function scanRepository() {
       try {
-        // Extract owner and repo from GitHub Pages URL
-        // https://vnscity0803-tech.github.io/VNSRP-IMG/
         const url = new URL(window.location.href);
-        const owner = url.hostname.split('.')[0]; // vnscity0803-tech
-        const repo = url.pathname.split('/')[1]; // VNSRP-IMG
+        const owner = url.hostname.split('.')[0];
+        const repo = url.pathname.split('/')[1];
 
         if (!owner || !repo) {
           throw new Error('Could not detect GitHub repo from URL');
@@ -221,71 +219,79 @@
 
         console.log(`📂 Scanning ${owner}/${repo}...`);
 
-        // Use GitHub API to get folder structure
-        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents`;
-        const response = await fetch(apiUrl);
-        
-        if (!response.ok) {
-          throw new Error(`GitHub API error: ${response.status}`);
-        }
-
-        const contents = await response.json();
-        const folders = contents.filter(item => item.type === 'dir' && !item.name.startsWith('.'));
-
-        if (folders.length === 0) {
-          throw new Error('No folders found in repo');
-        }
-
-        console.log(`✓ Found folders: ${folders.map(f => f.name).join(', ')}`);
-
         let items = [];
 
-        // Scan each folder for images
-        for (const folder of folders) {
+        // List of folders to scan (you can add more)
+        const foldersToScan = ['Item', 'male', 'female', 'ox_inventory'];
+
+        for (const folderName of foldersToScan) {
           try {
-            const folderUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${folder.name}`;
-            const folderResponse = await fetch(folderUrl);
+            // Try to fetch a known file from folder to detect if it exists
+            // We'll use a simple approach: try to read first 100 potential files
+            console.log(`🔍 Scanning ${folderName}...`);
             
-            if (!folderResponse.ok) continue;
-
-            const files = await folderResponse.json();
+            let folderItems = [];
             
-            // Filter image files (.png, .webp)
-            const imageFiles = files.filter(f => 
-              f.type === 'file' && 
-              (f.name.endsWith('.png') || f.name.endsWith('.webp'))
-            );
+            // Try common naming patterns
+            for (let i = 0; i < 500; i++) {
+              // Try different file naming patterns
+              const patterns = [
+                `${i}.png`,
+                `${i}.webp`,
+                `male_${i}.png`,
+                `male_${i}.webp`,
+                `female_${i}.png`,
+                `female_${i}.webp`,
+              ];
 
-            if (imageFiles.length > 0) {
-              imageFiles.forEach((file, idx) => {
-                // Extract category from filename if starts with male_ or female_
-                let category = folder.name;
-                let displayName = file.name.replace(/\.(png|webp)$/, '');
-                
-                if (displayName.startsWith('male_')) {
-                  category = 'male';
-                  displayName = displayName.substring(5); // remove "male_"
-                } else if (displayName.startsWith('female_')) {
-                  category = 'female';
-                  displayName = displayName.substring(7); // remove "female_"
+              for (const pattern of patterns) {
+                const fileUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${folderName}/${pattern}`;
+                try {
+                  const response = await fetch(fileUrl, { method: 'HEAD' });
+                  if (response.ok) {
+                    const filename = pattern.replace(/\.(png|webp)$/, '');
+                    
+                    // Determine category
+                    let category = folderName;
+                    let displayName = filename;
+                    
+                    if (filename.startsWith('male_')) {
+                      category = 'male';
+                      displayName = filename.substring(5);
+                    } else if (filename.startsWith('female_')) {
+                      category = 'female';
+                      displayName = filename.substring(7);
+                    }
+                    
+                    folderItems.push({
+                      folder: category,
+                      index: folderItems.length,
+                      name: `${category}_${displayName}`,
+                      image: fileUrl.replace(/\/[^/]*$/, `/`) + pattern
+                    });
+                  }
+                } catch (e) {
+                  // File doesn't exist, continue
                 }
-                
-                items.push({
-                  folder: category,
-                  index: idx,
-                  name: `${category}_${displayName}`,
-                  image: `https://raw.githubusercontent.com/${owner}/${repo}/main/${folder.name}/${file.name}`
-                });
-              });
-              console.log(`✓ ${folder.name}: ${imageFiles.length} files`);
+              }
+
+              // If we found files, continue checking for more
+              if (folderItems.length > 0 && i > folderItems.length + 50) {
+                break; // Stop if we haven't found new files in a while
+              }
+            }
+
+            if (folderItems.length > 0) {
+              items = items.concat(folderItems);
+              console.log(`✓ ${folderName}: ${folderItems.length} files`);
             }
           } catch (e) {
-            console.log(`⚠ Error reading ${folder.name}:`, e.message);
+            console.log(`⚠ Error scanning ${folderName}:`, e.message);
           }
         }
 
         if (items.length === 0) {
-          throw new Error('No image files found in any folder');
+          throw new Error('No image files found. Make sure files exist in repo folders.');
         }
 
         allItems = items;
@@ -301,7 +307,8 @@
           <div class="py-24 text-center">
             <p class="text-base text-zinc-300 mb-2">❌ ${error.message}</p>
             <p class="text-xs text-zinc-600 mb-6 space-y-2">
-              <div>Make sure repo has folders with .png or .webp files</div>
+              <div>Make sure repo has folders: Item/, male/, female/, ox_inventory/</div>
+              <div>With image files: 0.png, 1.png, male_0.png, female_0.png, etc.</div>
             </p>
             <button onclick="location.reload()" class="px-4 py-2 bg-rose-600 text-white text-xs rounded">Retry</button>
           </div>
