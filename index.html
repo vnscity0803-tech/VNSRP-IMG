@@ -356,8 +356,8 @@
         div.onclick = () => openDetailModal(item.component, item.drawable, item.image);
         div.innerHTML = `
           <article class="chamfer-card bg-[#111116] h-full flex flex-col overflow-hidden">
-            <div class="relative w-full aspect-[4/4.2] bg-[#16161f] overflow-hidden">
-              <img src="${item.image}" alt="${item.name}" loading="lazy" class="clothing-photo w-full h-full object-cover" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 400%22%3E%3Crect fill=%22%23222%22 width=%22400%22 height=%22400%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2224%22 fill=%22%23666%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22%3EImage not found%3C/text%3E%3C/svg%3E'" />
+            <div class="relative w-full aspect-[1/1] bg-[#16161f] overflow-hidden flex items-center justify-center">
+              <img src="${item.image}" alt="${item.name}" loading="lazy" class="clothing-photo w-full h-full object-contain" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 400%22%3E%3Crect fill=%22%23222%22 width=%22400%22 height=%22400%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2224%22 fill=%22%23666%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22%3EImage not found%3C/text%3E%3C/svg%3E'" />
               <div class="absolute inset-0 bg-gradient-to-t from-[#111116] via-transparent to-black/30 opacity-85 pointer-events-none"></div>
               <span class="absolute top-2.5 right-2.5 px-2 py-0.5 chamfer-badge bg-black/75 border border-rose-500/35 font-mono text-[10px] font-semibold text-rose-300">${item.folder}</span>
               <span class="absolute bottom-2.5 left-2.5 px-2 py-0.5 chamfer-badge bg-[#09090d]/90 border border-white/15 font-mono text-[11px] font-bold text-white">#${item.index}</span>
