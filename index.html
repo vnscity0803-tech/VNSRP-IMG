@@ -8,7 +8,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/lucide@latest"></script>
 
   <script>
     tailwind.config = {
@@ -92,29 +91,35 @@
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col antialiased selection:bg-rose-600/30 selection:text-rose-200">
+<body class="min-h-screen flex flex-col antialiased">
 
   <!-- HEADER -->
   <header class="sticky top-0 z-40 w-full glass-surface border-b border-white/[0.08]">
     <div class="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-      <a href="#" onclick="location.reload(); return false;" class="flex items-center gap-3 group shrink-0">
+      <a href="#" onclick="location.reload(); return false;" class="flex items-center gap-3 shrink-0">
         <div class="relative w-9 h-9 chamfer-btn bg-gradient-to-br from-rose-500 to-rose-800 p-[1px]">
           <div class="w-full h-full bg-[#0c0c10] chamfer-btn flex items-center justify-center">
             <span class="font-mono font-extrabold text-sm text-rose-500">OX</span>
           </div>
         </div>
         <div class="flex flex-col">
-          <span class="font-extrabold text-base sm:text-lg text-white"><span class="text-rose-500">OX</span> RECORDER</span>
-          <span class="text-[10px] font-semibold tracking-[0.24em] text-zinc-400 uppercase mt-1">Clothing</span>
+          <span class="font-extrabold text-base text-white"><span class="text-rose-500">OX</span> RECORDER</span>
+          <span class="text-[10px] font-semibold tracking-[0.24em] text-zinc-400 uppercase mt-1">Dynamic Gallery</span>
         </div>
       </a>
 
-      <button onclick="openSearchModal()" class="group chamfer-btn flex items-center gap-3 px-3.5 py-1.5 h-9 bg-[#14141b] hover:bg-[#1a1a24] border border-white/[0.08] text-xs text-zinc-400">
+      <button onclick="openSearchModal()" class="chamfer-btn flex items-center gap-3 px-3.5 py-1.5 h-9 bg-[#14141b] hover:bg-[#1a1a24] border border-white/[0.08] text-xs text-zinc-400">
         <svg class="w-3.5 h-3.5 text-rose-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
-        <span class="truncate max-w-[100px] sm:max-w-[150px]">Search...</span>
+        <span class="truncate max-w-[120px]">Search...</span>
       </button>
     </div>
   </header>
+
+  <!-- DEBUG -->
+  <div id="debugPanel" class="w-full bg-black/95 border-b border-rose-500/50 px-4 py-2 text-xs font-mono text-zinc-400 max-h-16 overflow-y-auto">
+    <div id="debugStatus">Status: Scanning repository...</div>
+    <div id="debugItems">Items: 0</div>
+  </div>
 
   <!-- FILTER BAR -->
   <section class="w-full border-b border-white/[0.06] bg-[#0b0b0f]/90">
@@ -127,33 +132,21 @@
           <svg class="w-3.5 h-3.5 text-rose-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
 
-        <div class="relative hidden xl:block">
-          <input id="inlineSearchInput" type="text" oninput="handleSearch(this.value)" placeholder="Search..." class="chamfer-btn bg-[#13131a] text-xs text-zinc-200 placeholder-zinc-500 pl-3 pr-3 py-2 w-60 border border-white/[0.08] focus:outline-none focus:border-rose-500/60" />
-        </div>
+        <input id="inlineSearchInput" type="text" oninput="handleSearch(this.value)" placeholder="Search..." class="chamfer-btn bg-[#13131a] text-xs text-zinc-200 placeholder-zinc-500 px-3 py-2 w-60 border border-white/[0.08] focus:outline-none focus:border-rose-500/60" />
       </div>
 
-      <div class="flex items-center gap-3 text-xs">
-        <span class="text-zinc-500">Total: <strong id="resultCount" class="text-white font-mono">0</strong></span>
+      <div class="flex items-center gap-3 text-xs text-zinc-500">
+        <span>Total: <strong id="resultCount" class="text-white font-mono">0</strong></span>
         <button id="resetBtn" onclick="resetAllFilters()" class="hidden text-xs font-medium text-rose-400 hover:text-rose-300 underline underline-offset-4">Reset</button>
       </div>
     </div>
   </section>
 
   <!-- MAIN -->
-  <!-- DEBUG INFO (temporary) -->
-  <div id="debugPanel" class="fixed bottom-0 left-0 right-0 z-50 bg-black/95 border-t border-rose-500/50 px-4 py-2 text-xs font-mono text-zinc-300 max-h-24 overflow-y-auto">
-    <div class="max-w-[1680px] mx-auto">
-      <div id="debugStatus">Status: Initializing...</div>
-      <div id="debugItems">Items loaded: 0</div>
-      <div id="debugTime">Load time: waiting...</div>
-    </div>
-  </div>
-
-  <main class="flex-1 max-w-[1680px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-7 pb-24">
+  <main class="flex-1 max-w-[1680px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-7">
     <div id="loadingState" class="flex flex-col items-center justify-center py-24">
       <div class="spinner mb-4"></div>
-      <p class="text-sm text-zinc-400">Loading clothing data...</p>
-      <p class="text-xs text-zinc-600 mt-4">Check bottom of screen for status...</p>
+      <p class="text-sm text-zinc-400">Loading clothing data from repository...</p>
     </div>
 
     <div id="clothingGrid" class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
@@ -163,12 +156,17 @@
     </div>
   </main>
 
-  <!-- FOOTER -->
-  <footer class="border-t border-white/[0.06] bg-[#070709] py-5 mt-10">
-    <div class="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 text-xs text-zinc-500 text-center">
-      <span class="font-extrabold text-zinc-200"><span class="text-rose-500">OX</span> RECORDER</span> • Dynamic Gallery
+  <!-- SEARCH MODAL -->
+  <div id="searchModal" class="fixed inset-0 z-50 hidden items-start justify-center pt-16 p-4 bg-black/85 backdrop-blur-sm" onclick="closeSearchModal(event)">
+    <div class="w-full max-w-xl bg-[#101015] border border-rose-500/30 chamfer-card overflow-hidden" onclick="event.stopPropagation()">
+      <div class="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.08]">
+        <input id="modalSearchInput" type="text" oninput="handleModalSearch(this.value)" placeholder="Search..." class="w-full bg-transparent text-sm text-white placeholder-zinc-500 focus:outline-none" />
+      </div>
+      <div id="quickSearchResults" class="max-h-80 overflow-y-auto divide-y divide-white/[0.05]">
+        <div class="p-6 text-center text-xs text-zinc-500">Type to search...</div>
+      </div>
     </div>
-  </footer>
+  </div>
 
   <!-- DETAIL MODAL -->
   <div id="detailModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/85 backdrop-blur-sm" onclick="closeDetailModal(event)">
@@ -189,37 +187,12 @@
         </div>
 
         <div class="p-5 sm:p-6 flex flex-col justify-between gap-5">
-          <h3 id="modalName" class="font-mono text-lg font-bold text-white break-all">male_component_0_0</h3>
-
-          <div class="grid grid-cols-2 gap-2.5">
-            <div class="p-2.5 chamfer-btn bg-[#15151d] border border-white/[0.06]">
-              <div class="text-[10px] text-zinc-500">Component</div>
-              <div id="modalCompValue" class="font-mono text-sm font-bold text-white mt-0.5">0</div>
-            </div>
-            <div class="p-2.5 chamfer-btn bg-[#15151d] border border-white/[0.06]">
-              <div class="text-[10px] text-zinc-500">Drawable</div>
-              <div id="modalDrawValue" class="font-mono text-sm font-bold text-white mt-0.5">0</div>
-            </div>
-          </div>
-
+          <h3 id="modalName" class="font-mono text-lg font-bold text-white break-all">Item</h3>
           <button onclick="copyToClipboard(document.getElementById('modalName').textContent)" class="w-full chamfer-btn py-2.5 px-3 bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white transition-colors flex items-center justify-center gap-2">
             <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
             Copy
           </button>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SEARCH MODAL -->
-  <div id="searchModal" class="fixed inset-0 z-50 hidden items-start justify-center pt-16 sm:pt-24 p-4 bg-black/85 backdrop-blur-sm" onclick="closeSearchModal(event)">
-    <div class="w-full max-w-xl bg-[#101015] border border-rose-500/30 chamfer-card shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
-      <div class="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.08]">
-        <input id="modalSearchInput" type="text" oninput="handleModalSearch(this.value)" placeholder="Search by component, drawable..." class="w-full bg-transparent text-sm text-white placeholder-zinc-500 focus:outline-none" />
-      </div>
-
-      <div id="quickSearchResults" class="max-h-80 overflow-y-auto divide-y divide-white/[0.05]">
-        <div class="p-6 text-center text-xs text-zinc-500">Type to search...</div>
       </div>
     </div>
   </div>
@@ -240,45 +213,79 @@
     let currentPage = 0;
     let hasMore = true;
 
-    // Load data
-    async function loadData() {
+    async function scanRepository() {
       try {
-        updateDebug('Status', 'Fetching data.json...');
-        const startTime = performance.now();
+        updateDebug('Status', 'Extracting GitHub info from URL...');
         
-        const response = await fetch('data.json', { cache: 'no-cache' });
+        // Parse GitHub Pages URL: https://username.github.io/repo/
+        const pathParts = window.location.pathname.split('/').filter(p => p);
+        const repo = pathParts[0] || '';
         
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        // Get owner from domain or fallback
+        let owner = window.location.hostname.split('.')[0];
         
-        updateDebug('Status', 'Parsing JSON...');
-        const data = await response.json();
-        allItems = data.items || [];
+        if (!repo) throw new Error('Not on GitHub Pages - no repo in URL');
         
-        if (!allItems.length) throw new Error('No items in data.json');
+        updateDebug('Status', `Scanning ${owner}/${repo} from GitHub API...`);
+
+        // Get folder structure via GitHub API
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents`;
+        const response = await fetch(apiUrl);
         
-        const loadTime = (performance.now() - startTime).toFixed(2);
-        updateDebug('Status', `✓ Success!`);
-        updateDebug('Items loaded', allItems.length);
-        updateDebug('Load time', `${loadTime}ms`);
+        if (!response.ok) throw new Error(`GitHub API error: ${response.status}`);
         
+        const contents = await response.json();
+        const folders = contents.filter(item => item.type === 'dir' && item.name.match(/^\d+$/));
+
+        updateDebug('Status', `Found ${folders.length} component folders`);
+
+        let items = [];
+
+        for (const folder of folders) {
+          const comp = parseInt(folder.name);
+          updateDebug('Status', `Scanning component ${comp}...`);
+          
+          const fileUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${folder.name}`;
+          const fileResponse = await fetch(fileUrl);
+          
+          if (!fileResponse.ok) continue;
+          
+          const files = await fileResponse.json();
+          
+          files
+            .filter(f => f.name.endsWith('.png'))
+            .forEach(f => {
+              const drawable = parseInt(f.name.replace('.png', ''));
+              items.push({
+                component: comp,
+                drawable: drawable,
+                name: `male_component_${comp}_${drawable}`,
+                image: f.download_url
+              });
+            });
+        }
+
+        allItems = items.sort((a, b) => a.component !== b.component ? a.component - b.component : a.drawable - b.drawable);
+        
+        updateDebug('Status', `✓ Loaded ${allItems.length} items`);
+        updateDebug('Items', allItems.length);
+
         populateComponentFilter();
         renderGrid();
-        
+
         document.getElementById('loadingState').classList.add('hidden');
         document.getElementById('clothingGrid').classList.remove('hidden');
-        lucide.createIcons();
-        
+
       } catch (error) {
+        console.error('Error:', error);
         updateDebug('Status', `❌ ${error.message}`);
         document.getElementById('loadingState').innerHTML = `
           <div class="py-24 text-center">
-            <p class="text-base text-zinc-300 font-semibold mb-2">❌ Error Loading Data</p>
-            <p class="text-sm text-zinc-500 mb-6 font-mono bg-black/30 px-4 py-2 rounded">${error.message}</p>
-            <div class="text-xs text-zinc-600 mb-6 space-y-1">
-              <p>✓ Check: data.json exists in <strong>same folder</strong> as index.html</p>
-              <p>✓ File size should be ~500KB+ (3000+ items)</p>
-              <p>✓ See status at bottom of screen</p>
-            </div>
+            <p class="text-sm text-zinc-300 mb-2">❌ ${error.message}</p>
+            <p class="text-xs text-zinc-600 mb-6 space-y-1">
+              <div>Make sure numeric folders (like 1/, 2/, 3/) exist in repo</div>
+              <div>And each folder contains .png files</div>
+            </p>
             <button onclick="location.reload()" class="px-4 py-2 bg-rose-600 text-white text-xs rounded">Retry</button>
           </div>
         `;
@@ -286,13 +293,14 @@
     }
 
     function updateDebug(key, value) {
-      const debugPanel = document.getElementById('debug' + key.replace(/\s/g, ''));
-      if (debugPanel) debugPanel.textContent = `${key}: ${value}`;
+      const elem = document.getElementById(`debug${key.replace(/\s/g, '')}`);
+      if (elem) elem.textContent = `${key}: ${value}`;
     }
 
     function populateComponentFilter() {
-      const components = [...new Set(allItems.map(i => i.component))].sort((a, b) => a - b);
+      const components = [...new Set(allItems.map(i => i.component))];
       const select = document.getElementById('componentFilter');
+      
       components.forEach(comp => {
         const option = document.createElement('option');
         option.value = comp;
@@ -305,7 +313,7 @@
       const q = state.searchQuery.toLowerCase();
       displayedItems = allItems.filter(item => {
         const matchComp = !state.component || item.component === parseInt(state.component);
-        const matchQuery = !q || item.component.toString().includes(q) || item.drawable.toString().includes(q) || item.name.toLowerCase().includes(q);
+        const matchQuery = !q || item.component.toString().includes(q) || item.drawable.toString().includes(q);
         return matchComp && matchQuery;
       });
 
@@ -370,29 +378,19 @@
     }
 
     function setupInfiniteScroll() {
-      const main = document.querySelector('main');
-      
-      // Remove old observer if exists
-      if (window.scrollObserver) {
-        window.scrollObserver.disconnect();
-      }
-
-      // Create sentinel element
       let sentinel = document.getElementById('scrollSentinel');
       if (!sentinel) {
         sentinel = document.createElement('div');
         sentinel.id = 'scrollSentinel';
         sentinel.className = 'h-10';
-        const grid = document.getElementById('clothingGrid');
-        if (grid.parentNode) grid.parentNode.insertBefore(sentinel, grid.nextSibling);
+        document.querySelector('main').appendChild(sentinel);
       }
 
-      // Intersection Observer for infinite scroll
+      if (window.scrollObserver) window.scrollObserver.disconnect();
+      
       window.scrollObserver = new IntersectionObserver(entries => {
         entries.forEach(entry => {
-          if (entry.isIntersecting && hasMore) {
-            loadMoreItems();
-          }
+          if (entry.isIntersecting && hasMore) loadMoreItems();
         });
       }, { threshold: 0.1 });
 
@@ -413,7 +411,6 @@
       state.searchQuery = value;
       document.getElementById('inlineSearchInput').value = value;
       renderGrid();
-      renderQuickSearchResults(value);
     }
 
     function resetAllFilters() {
@@ -425,33 +422,10 @@
       renderGrid();
     }
 
-    function renderQuickSearchResults(query) {
-      const q = query.toLowerCase();
-      const results = allItems.filter(i => i.component.toString().includes(q) || i.drawable.toString().includes(q) || i.name.toLowerCase().includes(q)).slice(0, 10);
-      const container = document.getElementById('quickSearchResults');
-      
-      if (!results.length) {
-        container.innerHTML = `<div class="p-6 text-center text-xs text-zinc-500">No results</div>`;
-        return;
-      }
-
-      container.innerHTML = results.map(item => `
-        <button type="button" onclick="closeSearchModal(); openDetailModal(${item.component}, ${item.drawable}, '${item.image}');" class="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-rose-500/10 text-left">
-          <img src="${item.image}" alt="" class="w-9 h-10 object-cover chamfer-badge border border-white/10" />
-          <div class="truncate">
-            <div class="font-mono text-[11px] font-bold text-rose-400">C${item.component} D${item.drawable}</div>
-            <div class="text-[11px] text-zinc-400">${item.name}</div>
-          </div>
-        </button>
-      `).join('');
-    }
-
     function openDetailModal(component, drawable, image) {
       document.getElementById('modalComponent').textContent = `C: ${component}`;
       document.getElementById('modalDrawable').textContent = `D: ${drawable}`;
       document.getElementById('modalName').textContent = `male_component_${component}_${drawable}`;
-      document.getElementById('modalCompValue').textContent = component;
-      document.getElementById('modalDrawValue').textContent = drawable;
       document.getElementById('modalPreviewImage').src = image;
       document.getElementById('detailModal').classList.remove('hidden');
       document.getElementById('detailModal').classList.add('flex');
@@ -483,8 +457,6 @@
     function copyToClipboard(text) {
       navigator.clipboard.writeText(text).then(() => {
         showToast(`Copied: ${text}`);
-      }).catch(() => {
-        showToast('Failed to copy');
       });
     }
 
@@ -513,7 +485,7 @@
     });
 
     // Init
-    window.addEventListener('DOMContentLoaded', loadData);
+    window.addEventListener('DOMContentLoaded', scanRepository);
   </script>
 </body>
 </html>
