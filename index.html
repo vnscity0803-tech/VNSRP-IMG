@@ -209,58 +209,18 @@
 
     async function scanRepository() {
       try {
-        // Parse GitHub Pages URL: https://username.github.io/repo/
-        const pathParts = window.location.pathname.split('/').filter(p => p);
-        const repo = pathParts[0] || '';
-        let owner = window.location.hostname.split('.')[0];
+        // Load manifest.json (pre-built, no API calls needed)
+        const response = await fetch('manifest.json');
         
-        if (!repo) throw new Error('Not on GitHub Pages - no repo in URL');
-
-        // Get all contents from root
-        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents`;
-        const response = await fetch(apiUrl);
-        
-        if (!response.ok) throw new Error(`GitHub API error: ${response.status}`);
-        
-        const contents = await response.json();
-        
-        // Filter only directories (scan ALL folders, not just numeric ones)
-        const folders = contents.filter(item => item.type === 'dir');
-
-        if (folders.length === 0) throw new Error('No folders found in repo');
-
-        let items = [];
-
-        // Scan each folder
-        for (const folder of folders) {
-          try {
-            const fileUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${folder.name}`;
-            const fileResponse = await fetch(fileUrl);
-            
-            if (!fileResponse.ok) continue;
-            
-            const files = await fileResponse.json();
-            
-            // Get all PNG files from this folder
-            files
-              .filter(f => f.type === 'file' && f.name.endsWith('.png'))
-              .forEach((f, index) => {
-                items.push({
-                  folder: folder.name,
-                  index: index,
-                  name: `${folder.name}_${f.name.replace('.png', '')}`,
-                  image: f.download_url || `https://raw.githubusercontent.com/${owner}/${repo}/main/${folder.name}/${f.name}`
-                });
-              });
-          } catch (e) {
-            console.warn(`Error scanning ${folder.name}:`, e);
-          }
+        if (!response.ok) {
+          throw new Error('manifest.json not found - run: python build-manifest.py');
         }
-
-        allItems = items;
+        
+        const manifest = await response.json();
+        allItems = manifest.items || [];
         
         if (allItems.length === 0) {
-          throw new Error(`Found ${folders.length} folders but no PNG files`);
+          throw new Error('No items in manifest.json');
         }
 
         populateComponentFilter();
@@ -274,9 +234,10 @@
         document.getElementById('loadingState').innerHTML = `
           <div class="py-24 text-center">
             <p class="text-base text-zinc-300 mb-2">❌ ${error.message}</p>
-            <p class="text-xs text-zinc-600 mb-6 space-y-1">
-              <div>Make sure folders with .png files exist in repo</div>
-              <div>(Like Item/, Vehicle/, etc.)</div>
+            <p class="text-xs text-zinc-600 mb-6 space-y-2">
+              <div>Generate manifest.json locally:</div>
+              <code class="bg-black/50 px-3 py-1 rounded inline-block">python build-manifest.py</code>
+              <div class="mt-2">Then push to GitHub</div>
             </p>
             <button onclick="location.reload()" class="px-4 py-2 bg-rose-600 text-white text-xs rounded">Retry</button>
           </div>
