@@ -209,20 +209,60 @@
 
     async function scanRepository() {
       try {
-        // Load manifest.json (pre-built, no API calls needed)
-        const response = await fetch('manifest.json');
-        
-        if (!response.ok) {
-          throw new Error('manifest.json not found - run: python build-manifest.py');
-        }
-        
-        const manifest = await response.json();
-        allItems = manifest.items || [];
-        
-        if (allItems.length === 0) {
-          throw new Error('No items in manifest.json');
+        // Try to load from manifest.json first
+        try {
+          const response = await fetch('manifest.json');
+          if (response.ok) {
+            const manifest = await response.json();
+            allItems = manifest.items || [];
+            if (allItems.length > 0) {
+              populateComponentFilter();
+              renderGrid();
+              document.getElementById('loadingState').classList.add('hidden');
+              document.getElementById('clothingGrid').classList.remove('hidden');
+              return;
+            }
+          }
+        } catch (e) {
+          console.log('manifest.json not found, scanning folders...');
         }
 
+        // Fallback: Scan folders directly
+        const folderNames = ['male', 'female', 'Item', 'Vehicle', 'Props', 'Accessories'];
+        let items = [];
+
+        for (const folderName of folderNames) {
+          try {
+            // Try to fetch a list of files from folder
+            const response = await fetch(folderName + '/');
+            if (!response.ok) continue;
+
+            const html = await response.text();
+            
+            // Parse HTML to get file list (simple regex approach)
+            const fileMatches = html.match(/href=["']([^"']+\.png)["']/gi);
+            
+            if (fileMatches) {
+              fileMatches.forEach((match, idx) => {
+                const filename = match.match(/href=["']([^"']+)["']/)[1];
+                items.push({
+                  folder: folderName,
+                  index: idx,
+                  name: `${folderName}_${filename.replace('.png', '')}`,
+                  image: `${folderName}/${filename}`
+                });
+              });
+            }
+          } catch (e) {
+            console.log(`Folder ${folderName} not accessible or empty`);
+          }
+        }
+
+        if (items.length === 0) {
+          throw new Error('No PNG files found in any folder');
+        }
+
+        allItems = items;
         populateComponentFilter();
         renderGrid();
 
@@ -235,9 +275,8 @@
           <div class="py-24 text-center">
             <p class="text-base text-zinc-300 mb-2">❌ ${error.message}</p>
             <p class="text-xs text-zinc-600 mb-6 space-y-2">
-              <div>Generate manifest.json locally:</div>
-              <code class="bg-black/50 px-3 py-1 rounded inline-block">python build-manifest.py</code>
-              <div class="mt-2">Then push to GitHub</div>
+              <div>Make sure folders with PNG files exist:</div>
+              <div class="text-xs">(male/, female/, Item/, Vehicle/, etc.)</div>
             </p>
             <button onclick="location.reload()" class="px-4 py-2 bg-rose-600 text-white text-xs rounded">Retry</button>
           </div>
