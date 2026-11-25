@@ -258,10 +258,22 @@
 
             if (imageFiles.length > 0) {
               imageFiles.forEach((file, idx) => {
+                // Extract category from filename if starts with male_ or female_
+                let category = folder.name;
+                let displayName = file.name.replace(/\.(png|webp)$/, '');
+                
+                if (displayName.startsWith('male_')) {
+                  category = 'male';
+                  displayName = displayName.substring(5); // remove "male_"
+                } else if (displayName.startsWith('female_')) {
+                  category = 'female';
+                  displayName = displayName.substring(7); // remove "female_"
+                }
+                
                 items.push({
-                  folder: folder.name,
+                  folder: category,
                   index: idx,
-                  name: `${folder.name}_${file.name.replace(/\.(png|webp)$/, '')}`,
+                  name: `${category}_${displayName}`,
                   image: `https://raw.githubusercontent.com/${owner}/${repo}/main/${folder.name}/${file.name}`
                 });
               });
