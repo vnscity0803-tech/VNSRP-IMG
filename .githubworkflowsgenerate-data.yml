@@ -1,0 +1,19 @@
+name: Generate data.json
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - run: node generate-data.js
+      - run: git config user.name "Bot" && git config user.email "bot@example.com"
+      - run: git add data.json && git commit -m "auto: regenerate data.json" || true
+      - run: git push
