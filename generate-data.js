@@ -28,7 +28,7 @@ try {
           items.push({
             folder: folder,
             index: idx,
-            name: `${folder}_${file.replace(/\.(webp|png)$/, '')}`,
+            name: file.replace(/\.(webp|png)$/, ''),
             image: `./${folder}/${file}`
           });
         });
