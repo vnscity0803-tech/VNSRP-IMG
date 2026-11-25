@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oxlyn Recorder — Clothing Gallery</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Be Vietnam Pro"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #070709; }
+    ::-webkit-scrollbar-thumb { background: #272730; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #e11d48; }
+
+    body {
+      background-color: #070709;
+      background-image: 
+        radial-gradient(circle at 50% -15%, rgba(225, 29, 72, 0.14), transparent 55%),
+        radial-gradient(circle at 85% 30%, rgba(159, 18, 57, 0.06), transparent 40%);
+      color: #f4f4f5;
+      overflow-x: hidden;
+    }
+
+    .chamfer-card {
+      clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+    }
+
+    .chamfer-btn {
+      clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+    }
+
+    .chamfer-badge {
+      clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+    }
+
+    .card-shell {
+      background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+      padding: 1px;
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), background 0.25s ease;
+    }
+
+    .card-shell:hover {
+      transform: translateY(-4px);
+      background: linear-gradient(145deg, rgba(225, 29, 72, 0.85) 0%, rgba(225, 29, 72, 0.2) 55%, rgba(225, 29, 72, 0.7) 100%);
+      filter: drop-shadow(0 10px 24px rgba(225, 29, 72, 0.18));
+    }
+
+    .card-shell:hover .clothing-photo {
+      transform: scale(1.07);
+    }
+
+    .clothing-photo {
+      transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .glass-surface {
+      background: rgba(12, 12, 16, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid rgba(225, 29, 72, 0.3);
+      border-top-color: #e11d48;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-rose-600/30 selection:text-rose-200">
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-40 w-full glass-surface border-b border-white/[0.08]">
+    <div class="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <a href="#" onclick="location.reload(); return false;" class="flex items-center gap-3 group shrink-0">
+        <div class="relative w-9 h-9 chamfer-btn bg-gradient-to-br from-rose-500 to-rose-800 p-[1px]">
+          <div class="w-full h-full bg-[#0c0c10] chamfer-btn flex items-center justify-center">
+            <span class="font-mono font-extrabold text-sm text-rose-500">OX</span>
+          </div>
+        </div>
+        <div class="flex flex-col">
+          <span class="font-extrabold text-base sm:text-lg text-white"><span class="text-rose-500">OX</span> RECORDER</span>
+          <span class="text-[10px] font-semibold tracking-[0.24em] text-zinc-400 uppercase mt-1">Clothing</span>
+        </div>
+      </a>
+
+      <button onclick="openSearchModal()" class="group chamfer-btn flex items-center gap-3 px-3.5 py-1.5 h-9 bg-[#14141b] hover:bg-[#1a1a24] border border-white/[0.08] text-xs text-zinc-400">
+        <svg class="w-3.5 h-3.5 text-rose-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+        <span class="truncate max-w-[100px] sm:max-w-[150px]">Search...</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- FILTER BAR -->
+  <section class="w-full border-b border-white/[0.06] bg-[#0b0b0f]/90">
+    <div class="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap items-center gap-2.5">
+        <div class="relative">
+          <select id="componentFilter" onchange="applyFilters()" class="appearance-none chamfer-btn bg-[#13131a] text-xs font-medium text-zinc-200 pl-3.5 pr-8 py-2 border border-white/[0.08] focus:outline-none focus:border-rose-500/60 cursor-pointer">
+            <option value="">Component: All</option>
+          </select>
+          <svg class="w-3.5 h-3.5 text-rose-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+
+        <div class="relative hidden xl:block">
+          <input id="inlineSearchInput" type="text" oninput="handleSearch(this.value)" placeholder="Search..." class="chamfer-btn bg-[#13131a] text-xs text-zinc-200 placeholder-zinc-500 pl-3 pr-3 py-2 w-60 border border-white/[0.08] focus:outline-none focus:border-rose-500/60" />
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 text-xs">
+        <span class="text-zinc-500">Total: <strong id="resultCount" class="text-white font-mono">0</strong></span>
+        <button id="resetBtn" onclick="resetAllFilters()" class="hidden text-xs font-medium text-rose-400 hover:text-rose-300 underline underline-offset-4">Reset</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN -->
+  <!-- DEBUG INFO (temporary) -->
+  <div id="debugPanel" class="fixed bottom-0 left-0 right-0 z-50 bg-black/95 border-t border-rose-500/50 px-4 py-2 text-xs font-mono text-zinc-300 max-h-24 overflow-y-auto">
+    <div class="max-w-[1680px] mx-auto">
+      <div id="debugStatus">Status: Initializing...</div>
+      <div id="debugItems">Items loaded: 0</div>
+      <div id="debugTime">Load time: waiting...</div>
+    </div>
+  </div>
+
+  <main class="flex-1 max-w-[1680px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-7 pb-24">
+    <div id="loadingState" class="flex flex-col items-center justify-center py-24">
+      <div class="spinner mb-4"></div>
+      <p class="text-sm text-zinc-400">Loading clothing data...</p>
+      <p class="text-xs text-zinc-600 mt-4">Check bottom of screen for status...</p>
+    </div>
+
+    <div id="clothingGrid" class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
+
+    <div id="emptyState" class="hidden py-24 text-center">
+      <p class="text-base font-bold text-white">No items found</p>
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-white/[0.06] bg-[#070709] py-5 mt-10">
+    <div class="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 text-xs text-zinc-500 text-center">
+      <span class="font-extrabold text-zinc-200"><span class="text-rose-500">OX</span> RECORDER</span> • Dynamic Gallery
+    </div>
+  </footer>
+
+  <!-- DETAIL MODAL -->
+  <div id="detailModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/85 backdrop-blur-sm" onclick="closeDetailModal(event)">
+    <div class="relative w-full max-w-3xl bg-[#101015] border border-rose-500/30 chamfer-card overflow-hidden" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.08] bg-[#14141c]">
+        <div class="flex items-center gap-2.5">
+          <span id="modalComponent" class="px-2.5 py-0.5 chamfer-badge bg-rose-600 font-mono text-xs font-bold text-white">C: 0</span>
+          <span id="modalDrawable" class="font-mono text-xs font-semibold text-rose-400">D: 0</span>
+        </div>
+        <button onclick="closeDetailModal()" class="p-1.5 text-zinc-500 hover:text-white">
+          <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2">
+        <div class="bg-[#0a0a0e] border-b md:border-b-0 md:border-r border-white/[0.08] p-4 flex items-center justify-center min-h-[320px]">
+          <img id="modalPreviewImage" src="" alt="Preview" class="w-full max-h-96 object-contain" />
+        </div>
+
+        <div class="p-5 sm:p-6 flex flex-col justify-between gap-5">
+          <h3 id="modalName" class="font-mono text-lg font-bold text-white break-all">male_component_0_0</h3>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="p-2.5 chamfer-btn bg-[#15151d] border border-white/[0.06]">
+              <div class="text-[10px] text-zinc-500">Component</div>
+              <div id="modalCompValue" class="font-mono text-sm font-bold text-white mt-0.5">0</div>
+            </div>
+            <div class="p-2.5 chamfer-btn bg-[#15151d] border border-white/[0.06]">
+              <div class="text-[10px] text-zinc-500">Drawable</div>
+              <div id="modalDrawValue" class="font-mono text-sm font-bold text-white mt-0.5">0</div>
+            </div>
+          </div>
+
+          <button onclick="copyToClipboard(document.getElementById('modalName').textContent)" class="w-full chamfer-btn py-2.5 px-3 bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white transition-colors flex items-center justify-center gap-2">
+            <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+            Copy
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEARCH MODAL -->
+  <div id="searchModal" class="fixed inset-0 z-50 hidden items-start justify-center pt-16 sm:pt-24 p-4 bg-black/85 backdrop-blur-sm" onclick="closeSearchModal(event)">
+    <div class="w-full max-w-xl bg-[#101015] border border-rose-500/30 chamfer-card shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+      <div class="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.08]">
+        <input id="modalSearchInput" type="text" oninput="handleModalSearch(this.value)" placeholder="Search by component, drawable..." class="w-full bg-transparent text-sm text-white placeholder-zinc-500 focus:outline-none" />
+      </div>
+
+      <div id="quickSearchResults" class="max-h-80 overflow-y-auto divide-y divide-white/[0.05]">
+        <div class="p-6 text-center text-xs text-zinc-500">Type to search...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toastNotification" class="fixed bottom-5 right-5 z-50 pointer-events-none opacity-0 translate-y-2 transition-all duration-200">
+    <div class="flex items-center gap-2.5 px-4 py-2.5 chamfer-btn bg-[#15151e] border border-rose-500/40 shadow-2xl text-xs font-semibold text-white">
+      <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+      <span id="toastMessage">Copied!</span>
+    </div>
+  </div>
+
+  <script>
+    let allItems = [];
+    let state = { component: '', searchQuery: '' };
+    let displayedItems = [];
+    let itemsPerPage = 50;
+    let currentPage = 0;
+    let hasMore = true;
+
+    // Load data
+    async function loadData() {
+      try {
+        updateDebug('Status', 'Fetching data.json...');
+        const startTime = performance.now();
+        
+        const response = await fetch('data.json', { cache: 'no-cache' });
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        updateDebug('Status', 'Parsing JSON...');
+        const data = await response.json();
+        allItems = data.items || [];
+        
+        if (!allItems.length) throw new Error('No items in data.json');
+        
+        const loadTime = (performance.now() - startTime).toFixed(2);
+        updateDebug('Status', `✓ Success!`);
+        updateDebug('Items loaded', allItems.length);
+        updateDebug('Load time', `${loadTime}ms`);
+        
+        populateComponentFilter();
+        renderGrid();
+        
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('clothingGrid').classList.remove('hidden');
+        lucide.createIcons();
+        
+      } catch (error) {
+        updateDebug('Status', `❌ ${error.message}`);
+        document.getElementById('loadingState').innerHTML = `
+          <div class="py-24 text-center">
+            <p class="text-base text-zinc-300 font-semibold mb-2">❌ Error Loading Data</p>
+            <p class="text-sm text-zinc-500 mb-6 font-mono bg-black/30 px-4 py-2 rounded">${error.message}</p>
+            <div class="text-xs text-zinc-600 mb-6 space-y-1">
+              <p>✓ Check: data.json exists in <strong>same folder</strong> as index.html</p>
+              <p>✓ File size should be ~500KB+ (3000+ items)</p>
+              <p>✓ See status at bottom of screen</p>
+            </div>
+            <button onclick="location.reload()" class="px-4 py-2 bg-rose-600 text-white text-xs rounded">Retry</button>
+          </div>
+        `;
+      }
+    }
+
+    function updateDebug(key, value) {
+      const debugPanel = document.getElementById('debug' + key.replace(/\s/g, ''));
+      if (debugPanel) debugPanel.textContent = `${key}: ${value}`;
+    }
+
+    function populateComponentFilter() {
+      const components = [...new Set(allItems.map(i => i.component))].sort((a, b) => a - b);
+      const select = document.getElementById('componentFilter');
+      components.forEach(comp => {
+        const option = document.createElement('option');
+        option.value = comp;
+        option.textContent = `Component: ${comp}`;
+        select.appendChild(option);
+      });
+    }
+
+    function renderGrid() {
+      const q = state.searchQuery.toLowerCase();
+      displayedItems = allItems.filter(item => {
+        const matchComp = !state.component || item.component === parseInt(state.component);
+        const matchQuery = !q || item.component.toString().includes(q) || item.drawable.toString().includes(q) || item.name.toLowerCase().includes(q);
+        return matchComp && matchQuery;
+      });
+
+      document.getElementById('resultCount').textContent = displayedItems.length;
+      document.getElementById('resetBtn').classList.toggle('hidden', !state.component && !state.searchQuery);
+
+      const grid = document.getElementById('clothingGrid');
+      const emptyState = document.getElementById('emptyState');
+
+      if (!displayedItems.length) {
+        grid.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      grid.classList.remove('hidden');
+      emptyState.classList.add('hidden');
+
+      currentPage = 0;
+      hasMore = displayedItems.length > itemsPerPage;
+      
+      grid.innerHTML = '';
+      loadMoreItems();
+      setupInfiniteScroll();
+    }
+
+    function loadMoreItems() {
+      const grid = document.getElementById('clothingGrid');
+      const start = currentPage * itemsPerPage;
+      const end = start + itemsPerPage;
+      const itemsToLoad = displayedItems.slice(start, end);
+
+      itemsToLoad.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'card-shell chamfer-card group cursor-pointer';
+        div.onclick = () => openDetailModal(item.component, item.drawable, item.image);
+        div.innerHTML = `
+          <article class="chamfer-card bg-[#111116] h-full flex flex-col overflow-hidden">
+            <div class="relative w-full aspect-[4/4.2] bg-[#16161f] overflow-hidden">
+              <img src="${item.image}" alt="${item.name}" loading="lazy" class="clothing-photo w-full h-full object-cover" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 400%22%3E%3Crect fill=%22%23222%22 width=%22400%22 height=%22400%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2224%22 fill=%22%23666%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22%3EImage not found%3C/text%3E%3C/svg%3E'" />
+              <div class="absolute inset-0 bg-gradient-to-t from-[#111116] via-transparent to-black/30 opacity-85 pointer-events-none"></div>
+              <span class="absolute top-2.5 right-2.5 px-2 py-0.5 chamfer-badge bg-black/75 border border-rose-500/35 font-mono text-[10px] font-semibold text-rose-300">C${item.component}</span>
+              <span class="absolute bottom-2.5 left-2.5 px-2 py-0.5 chamfer-badge bg-[#09090d]/90 border border-white/15 font-mono text-[11px] font-bold text-white">D${item.drawable}</span>
+            </div>
+
+            <div class="p-3.5 border-t border-white/[0.06] flex-1 flex flex-col justify-between bg-[#101015]">
+              <h3 class="font-mono text-[13px] font-bold text-white break-words">${item.name}</h3>
+              <div class="mt-3.5 pt-2 border-t border-white/[0.04] flex items-center justify-between text-xs text-zinc-500">
+                <span>Comp ${item.component}</span>
+                <button type="button" onclick="quickCopy(event, '${item.name}')" class="w-7 h-7 chamfer-badge flex items-center justify-center bg-white/[0.03] hover:bg-rose-600 text-zinc-400 hover:text-white">
+                  <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                </button>
+              </div>
+            </div>
+          </article>
+        `;
+        grid.appendChild(div);
+      });
+
+      currentPage++;
+      hasMore = currentPage * itemsPerPage < displayedItems.length;
+    }
+
+    function setupInfiniteScroll() {
+      const main = document.querySelector('main');
+      
+      // Remove old observer if exists
+      if (window.scrollObserver) {
+        window.scrollObserver.disconnect();
+      }
+
+      // Create sentinel element
+      let sentinel = document.getElementById('scrollSentinel');
+      if (!sentinel) {
+        sentinel = document.createElement('div');
+        sentinel.id = 'scrollSentinel';
+        sentinel.className = 'h-10';
+        const grid = document.getElementById('clothingGrid');
+        if (grid.parentNode) grid.parentNode.insertBefore(sentinel, grid.nextSibling);
+      }
+
+      // Intersection Observer for infinite scroll
+      window.scrollObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && hasMore) {
+            loadMoreItems();
+          }
+        });
+      }, { threshold: 0.1 });
+
+      window.scrollObserver.observe(sentinel);
+    }
+
+    function applyFilters() {
+      state.component = document.getElementById('componentFilter').value;
+      renderGrid();
+    }
+
+    function handleSearch(value) {
+      state.searchQuery = value;
+      renderGrid();
+    }
+
+    function handleModalSearch(value) {
+      state.searchQuery = value;
+      document.getElementById('inlineSearchInput').value = value;
+      renderGrid();
+      renderQuickSearchResults(value);
+    }
+
+    function resetAllFilters() {
+      state.component = '';
+      state.searchQuery = '';
+      document.getElementById('componentFilter').value = '';
+      document.getElementById('inlineSearchInput').value = '';
+      document.getElementById('modalSearchInput').value = '';
+      renderGrid();
+    }
+
+    function renderQuickSearchResults(query) {
+      const q = query.toLowerCase();
+      const results = allItems.filter(i => i.component.toString().includes(q) || i.drawable.toString().includes(q) || i.name.toLowerCase().includes(q)).slice(0, 10);
+      const container = document.getElementById('quickSearchResults');
+      
+      if (!results.length) {
+        container.innerHTML = `<div class="p-6 text-center text-xs text-zinc-500">No results</div>`;
+        return;
+      }
+
+      container.innerHTML = results.map(item => `
+        <button type="button" onclick="closeSearchModal(); openDetailModal(${item.component}, ${item.drawable}, '${item.image}');" class="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-rose-500/10 text-left">
+          <img src="${item.image}" alt="" class="w-9 h-10 object-cover chamfer-badge border border-white/10" />
+          <div class="truncate">
+            <div class="font-mono text-[11px] font-bold text-rose-400">C${item.component} D${item.drawable}</div>
+            <div class="text-[11px] text-zinc-400">${item.name}</div>
+          </div>
+        </button>
+      `).join('');
+    }
+
+    function openDetailModal(component, drawable, image) {
+      document.getElementById('modalComponent').textContent = `C: ${component}`;
+      document.getElementById('modalDrawable').textContent = `D: ${drawable}`;
+      document.getElementById('modalName').textContent = `male_component_${component}_${drawable}`;
+      document.getElementById('modalCompValue').textContent = component;
+      document.getElementById('modalDrawValue').textContent = drawable;
+      document.getElementById('modalPreviewImage').src = image;
+      document.getElementById('detailModal').classList.remove('hidden');
+      document.getElementById('detailModal').classList.add('flex');
+    }
+
+    function closeDetailModal(e) {
+      if (e && e.target !== e.currentTarget) return;
+      document.getElementById('detailModal').classList.add('hidden');
+      document.getElementById('detailModal').classList.remove('flex');
+    }
+
+    function openSearchModal() {
+      document.getElementById('searchModal').classList.remove('hidden');
+      document.getElementById('searchModal').classList.add('flex');
+      setTimeout(() => document.getElementById('modalSearchInput').focus(), 50);
+    }
+
+    function closeSearchModal(e) {
+      if (e && e.target !== e.currentTarget) return;
+      document.getElementById('searchModal').classList.add('hidden');
+      document.getElementById('searchModal').classList.remove('flex');
+    }
+
+    function quickCopy(e, text) {
+      e.stopPropagation();
+      copyToClipboard(text);
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(`Copied: ${text}`);
+      }).catch(() => {
+        showToast('Failed to copy');
+      });
+    }
+
+    let toastTimer = null;
+    function showToast(msg) {
+      const toast = document.getElementById('toastNotification');
+      document.getElementById('toastMessage').textContent = msg;
+      clearTimeout(toastTimer);
+      toast.classList.remove('opacity-0', 'translate-y-2');
+      toast.classList.add('opacity-100', 'translate-y-0');
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'translate-y-2');
+      }, 2000);
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        openSearchModal();
+      } else if (e.key === 'Escape') {
+        closeSearchModal();
+        closeDetailModal();
+      }
+    });
+
+    // Init
+    window.addEventListener('DOMContentLoaded', loadData);
+  </script>
+</body>
+</html>
