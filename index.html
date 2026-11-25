@@ -228,7 +228,7 @@
         }
 
         // Fallback: Scan folders directly
-        const folderNames = ['male', 'female', 'Item', 'Vehicle', 'Props', 'Accessories'];
+        const folderNames = ['male', 'female', 'Item', 'Vehicle', 'Props', 'Accessories', 'ox_inventory'];
         let items = [];
 
         for (const folderName of folderNames) {
@@ -239,8 +239,8 @@
 
             const html = await response.text();
             
-            // Parse HTML to get file list (simple regex approach)
-            const fileMatches = html.match(/href=["']([^"']+\.png)["']/gi);
+            // Parse HTML to get file list (matches .png and .webp)
+            const fileMatches = html.match(/href=["']([^"']+\.(png|webp))["']/gi);
             
             if (fileMatches) {
               fileMatches.forEach((match, idx) => {
@@ -248,7 +248,7 @@
                 items.push({
                   folder: folderName,
                   index: idx,
-                  name: `${folderName}_${filename.replace('.png', '')}`,
+                  name: `${folderName}_${filename.replace(/\.(png|webp)$/, '')}`,
                   image: `${folderName}/${filename}`
                 });
               });
@@ -259,7 +259,7 @@
         }
 
         if (items.length === 0) {
-          throw new Error('No PNG files found in any folder');
+          throw new Error('No image files (PNG/WebP) found in any folder');
         }
 
         allItems = items;
@@ -275,8 +275,9 @@
           <div class="py-24 text-center">
             <p class="text-base text-zinc-300 mb-2">❌ ${error.message}</p>
             <p class="text-xs text-zinc-600 mb-6 space-y-2">
-              <div>Make sure folders with PNG files exist:</div>
-              <div class="text-xs">(male/, female/, Item/, Vehicle/, etc.)</div>
+              <div>Make sure folders with image files exist:</div>
+              <div class="text-xs">(male/, female/, Item/, ox_inventory/, etc.)</div>
+              <div class="text-xs">Supported: .png, .webp</div>
             </p>
             <button onclick="location.reload()" class="px-4 py-2 bg-rose-600 text-white text-xs rounded">Retry</button>
           </div>
